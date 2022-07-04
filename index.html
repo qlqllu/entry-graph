@@ -1,0 +1,135 @@
+<html>
+  <body>
+    <div>
+      Entry dependencies JSON: <input id="json-url" style="width: 800px;" value="http://exb-build.esri.com/job/exb-aws-dev-build-deploy-client/ws/client/dist-report/build-report/entry-dependency.json">
+    </div>
+    <button id="clear" style="display: none;">X</button>
+    <div style="display: flex;">
+      <div id="list" style="width: 500px; height: 1000px; overflow: auto;"></div>
+      <div id="graph"></div>
+    </div>
+  </body>
+  <script src="./d3.min.js"></script>
+  <script src="./graph.js"></script>
+  <script>
+    const url = document.getElementById('json-url').value
+    fetch(url).then(res => {
+      return res.json()
+    }).then(entryDeps => {
+      display(entryDeps)
+    }, err => {
+      alert(err.message)
+    })
+
+    let currentEntryName = ''
+
+    d3.select('#clear').on('click', () => {
+      filterEntry('', '')
+    })
+
+    function filterEntry(entryName, flag) {
+      currentEntryName = entryName
+
+      if (entryName === '') {
+        d3.select('#clear').style('display', 'none')  
+        display(entryDeps)
+        return
+      }
+
+      d3.select('#clear').style('display', 'block')
+
+      const filterData = {
+        nodes: entryDeps.nodes.filter(node => {
+          if (node.name === entryName) {
+            node.g = 1
+            return true
+          } else {
+            node.g = 0
+          }
+
+          return !!entryDeps.links.find(link => {
+            if (flag === 'dependents') {
+              return node.name === link.source && link.target === entryName
+            }
+            if (flag === 'dependencies') {
+              return node.name === link.target && link.source === entryName
+            }
+          })
+        }),
+        links: entryDeps.links
+      }
+      display(filterData)
+    }
+
+    function fixData(data) {
+      const ret = {}
+      // remove bad links
+      ret.links = data.links.filter(link => {
+        if (data.nodes.find(node => node.name === link.source) && data.nodes.find(node => node.name === link.target)) {
+          return true
+        }
+        return false
+      })
+      // remove bad nodes
+      ret.nodes = data.nodes.filter(node => {
+        if (ret.links.find(link => node.name === link.source || node.name === link.target)) {
+          return true
+        }
+        return false
+      })
+
+      ret.nodes.forEach(node => {
+        const dependencies = ret.links.filter(link => link.source === node.name)
+        const dependents = ret.links.filter(link => link.target === node.name)
+        node.dependenciesCount = dependencies.length
+        node.dependentsCount = dependents.length
+      })
+
+      ret.nodes = ret.nodes.sort((node1, node2) => node2.dependentsCount - node1.dependentsCount)
+      return ret
+    }
+    
+    function display(data) {
+      data = fixData(data)
+      createGraph(data)
+      createList(data)
+    }
+
+    function createGraph (data) {
+      const graphNode = document.getElementById('graph')
+      if (graphNode.childNodes.length > 0) {
+        graphNode.removeChild(graphNode.childNodes[0])
+      }
+      
+      chart = ForceGraph(data, {
+        nodeId: d => d.name,
+        nodeTitle: d => d.name,
+        nodeGroup: d => d.g,
+        // linkStrength: 2,
+        linkDistance: 200,
+        // nodeFill: nodeFill,
+        // linkStrokeWidth: l => Math.sqrt(l.value),
+        width: 1000,
+        height: 1000,
+      })
+      graphNode.append(chart)
+    }
+
+    function createList (data) {
+      d3.select('#list').selectAll('.node').data([]).exit().remove()
+
+      const nodes = d3.select('#list').selectAll('.node').data(data.nodes).enter()
+        .append('div')
+          .attr('class', 'node')
+          .style('color', d => d.name === currentEntryName ? 'red' : '')
+      
+      nodes.append('p').html(d => d.name)
+      nodes.append('button').html(d => `${d.dependenciesCount} dependencies`)
+        .on('click', (evt, d) => filterEntry(d.name, 'dependencies'))
+      nodes.append('button').html(d => `${d.dependentsCount} dependents`)
+      .on('click', (evt, d) => filterEntry(d.name, 'dependents'))
+    }
+
+  </script>
+  
+</html>
