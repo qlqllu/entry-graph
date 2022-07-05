@@ -3,6 +3,7 @@
     <div>
       Entry dependencies JSON: 
       <input id="json-url" style="width: 800px;" onkeydown="onKeydown(event)" value="http://exb-build.esri.com/job/exb-aws-dev-build-deploy-client/ws/client/dist-report/build-report/entry-dependency.json">
+      <span id="entry-count"></span>
     </div>
     <button id="clear" style="display: none;">X</button>
     <div style="display: flex;">
@@ -15,12 +16,14 @@
   <script>
     const url = document.getElementById('json-url').value
     let currentEntryName = ''
+    let entryDeps = null
 
     function fetchData(url) {
       fetch(url).then(res => {
         return res.json()
-      }).then(entryDeps => {
-        display(entryDeps)
+      }).then(_entryDeps => {
+        entryDeps = _entryDeps
+        display(_entryDeps)
       }, err => {
         alert(err.message)
       })
@@ -106,6 +109,7 @@
       data = fixData(data)
       createGraph(data)
       createList(data)
+      d3.select('#entry-count').html(`${data.nodes.length} entries.`)
     }
 
     function createGraph (data) {
