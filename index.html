@@ -1,7 +1,8 @@
 <html>
   <body>
     <div>
-      Entry dependencies JSON: <input id="json-url" style="width: 800px;" value="http://exb-build.esri.com/job/exb-aws-dev-build-deploy-client/ws/client/dist-report/build-report/entry-dependency.json">
+      Entry dependencies JSON: 
+      <input id="json-url" style="width: 800px;" onkeydown="onKeydown(event)" value="http://exb-build.esri.com/job/exb-aws-dev-build-deploy-client/ws/client/dist-report/build-report/entry-dependency.json">
     </div>
     <button id="clear" style="display: none;">X</button>
     <div style="display: flex;">
@@ -13,15 +14,27 @@
   <script src="./graph.js"></script>
   <script>
     const url = document.getElementById('json-url').value
-    fetch(url).then(res => {
-      return res.json()
-    }).then(entryDeps => {
-      display(entryDeps)
-    }, err => {
-      alert(err.message)
-    })
-
     let currentEntryName = ''
+
+    function fetchData(url) {
+      fetch(url).then(res => {
+        return res.json()
+      }).then(entryDeps => {
+        display(entryDeps)
+      }, err => {
+        alert(err.message)
+      })
+    }
+
+    function onKeydown (evt) {
+      if (evt.keyCode !== 13 || !evt.target.value) {
+        return
+      }
+
+      fetchData(evt.target.value)
+    }
+
+    fetchData(url)
 
     d3.select('#clear').on('click', () => {
       filterEntry('', '')
