@@ -7,8 +7,8 @@
   </style>
   <body>
     <div>
-      Entry dependencies JSON: 
-      <input id="json-url" style="width: 800px;" onkeydown="onKeydown(event)" value="https://wabbuild.esri.com:8081/job/exb-build-for-local-test/ws/client/dist-report/build-report/entry-dependency.json">
+      Entry dependencies JSON:
+      <input id="json-url" style="width: 800px;" onkeydown="onKeydown(event)" value="http://exb-build.esri.com/job/exb-aws-dev-build-deploy-client/ws/client/dist-report/build-report/entry-dependency.json">
       <span id="entry-count"></span>
     </div>
     <button id="clear" style="display: none;">X</button>
@@ -53,7 +53,7 @@
       currentEntryName = entryName
 
       if (entryName === '') {
-        d3.select('#clear').style('display', 'none')  
+        d3.select('#clear').style('display', 'none')
         display(entryDeps)
         return
       }
@@ -110,7 +110,7 @@
       ret.nodes = ret.nodes.sort((node1, node2) => node2.dependentsCount - node1.dependentsCount)
       return ret
     }
-    
+
     function display(data) {
       data = fixData(data)
       createGraph(data)
@@ -123,7 +123,7 @@
       if (graphNode.childNodes.length > 0) {
         graphNode.removeChild(graphNode.childNodes[0])
       }
-      
+
       chart = ForceGraph(data, {
         nodeId: d => d.name,
         nodeTitle: d => d.name,
@@ -145,7 +145,7 @@
         .append('div')
           .attr('class', 'node')
           .style('color', d => d.name === currentEntryName ? 'red' : '')
-      
+
       nodes.append('p').html(d => d.name)
       nodes.append('button').html(d => `${d.dependenciesCount} dependencies`)
         .on('click', (evt, d) => filterEntry(d.name, 'dependencies'))
@@ -154,5 +154,5 @@
     }
 
   </script>
-  
+
 </html>
